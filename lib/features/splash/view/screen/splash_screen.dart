@@ -1,4 +1,5 @@
 import 'package:chat_app/features/home/view/screen/home_screen.dart';
+import 'package:chat_app/features/login/view/screen/login_screen.dart';
 import 'package:flutter/material.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -14,7 +15,7 @@ class _SplashScreenState extends State<SplashScreen> {
   void initState() {
     super.initState();
     Future.delayed(const Duration(seconds: 2), () {
-      Navigator.of(context).pushReplacementNamed(HomeScreen.routeName);
+      Navigator.of(context).pushReplacementNamed(LoginScreen.routeName);
     });
   }
 
