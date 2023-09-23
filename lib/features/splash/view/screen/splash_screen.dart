@@ -1,23 +1,24 @@
 import 'package:chat_app/features/home/view/screen/home_screen.dart';
 import 'package:chat_app/features/login/view/screen/login_screen.dart';
+import 'package:chat_app/features/splash/controller/splash_controller.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
-class SplashScreen extends StatefulWidget {
-  const SplashScreen({super.key});
+class SplashScreen extends GetView<SplashController> {
   static const String routeName = '/SplashScreen';
 
-  @override
-  State<SplashScreen> createState() => _SplashScreenState();
-}
-
-class _SplashScreenState extends State<SplashScreen> {
-  @override
-  void initState() {
-    super.initState();
-    Future.delayed(const Duration(seconds: 2), () {
-      Navigator.of(context).pushReplacementNamed(LoginScreen.routeName);
-    });
-  }
+  // @override
+  // void initState() {
+  //   super.initState();
+  //   Future.delayed(const Duration(seconds: 2), () {
+  //     if (FirebaseAuth.instance.currentUser != null) {
+  //       Get.offAllNamed(HomeScreen.routeName);
+  //     } else {
+  //       Get.offAllNamed(LoginScreen.routeName);
+  //     }
+  //   });
+  // }
 
   @override
   Widget build(BuildContext context) {
