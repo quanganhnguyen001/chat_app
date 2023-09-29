@@ -1,6 +1,7 @@
 import 'dart:developer';
 import 'dart:io';
 
+import 'package:chat_app/services/firestore_services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:get/get.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -21,11 +22,16 @@ class LoginController extends GetxController {
 
   login() {
     Dialogs.showSpinner();
-    signInWithGoogle().then((value) {
+    signInWithGoogle().then((value) async {
       Get.back();
       if (value != null) {
-        log('\nUser: ${value.user}');
-        Get.offAllNamed(HomeScreen.routeName);
+        if (await FireStoreServices().userExists()) {
+          Get.offAllNamed(HomeScreen.routeName);
+        } else {
+          await FireStoreServices().createUser().then((value) {
+            Get.offAllNamed(HomeScreen.routeName);
+          });
+        }
       }
     });
   }
