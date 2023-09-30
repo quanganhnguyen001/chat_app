@@ -4,18 +4,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../features/user/model/user_model.dart';
 
 class FireStoreServices {
-  final FirebaseFirestore firestore = FirebaseFirestore.instance;
-  final FirebaseAuth firebaseAuth = FirebaseAuth.instance;
-  UserModel me = UserModel(
-      image: FirebaseAuth.instance.currentUser!.photoURL.toString(),
-      about: "Hey, I'm using We Chat!",
-      name: FirebaseAuth.instance.currentUser!.displayName.toString(),
-      createdAt: '',
-      isOnline: false,
-      id: FirebaseAuth.instance.currentUser!.uid,
-      lastActive: '',
-      email: FirebaseAuth.instance.currentUser!.email.toString(),
-      pushToken: '');
+  static FirebaseFirestore firestore = FirebaseFirestore.instance;
+  static FirebaseAuth firebaseAuth = FirebaseAuth.instance;
+  static late UserModel me;
 
   Future<List<UserModel>> fetchData() async {
     final QuerySnapshot<Map<String, dynamic>> querySnapshot = await firestore
@@ -46,11 +37,7 @@ class FireStoreServices {
         .doc(firebaseAuth.currentUser!.uid)
         .get()
         .then((user) {
-      if (user.exists) {
-        me = UserModel.fromJson(user.data()!);
-      } else {
-        createUser().then((value) => getSelfInfo());
-      }
+      me = UserModel.fromJson(user.data()!);
     }));
   }
 
@@ -69,5 +56,15 @@ class FireStoreServices {
                 name: firebaseAuth.currentUser!.displayName.toString(),
                 pushToken: '')
             .toJson());
+  }
+
+  Future<void> updateInfo({required String name, required String about}) async {
+    await firestore
+        .collection('users')
+        .doc(firebaseAuth.currentUser!.uid)
+        .update({
+      'name': name,
+      'about': about,
+    });
   }
 }

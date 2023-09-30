@@ -5,7 +5,9 @@ import 'package:get/get.dart';
 
 class HomeController extends GetxController {
   RxBool isLoading = false.obs;
+  RxBool isSearching = false.obs;
   final RxList<UserModel> userList = <UserModel>[].obs;
+  final RxList<UserModel> searchList = <UserModel>[].obs;
 
   @override
   void onInit() {
@@ -17,5 +19,16 @@ class HomeController extends GetxController {
   Future<void> fetchData() async {
     final List<UserModel> result = await FireStoreServices().fetchData();
     userList.value = result;
+  }
+
+  searchUser(String value) {
+    searchList.clear();
+    for (var e in userList) {
+      if (e.name.toLowerCase().contains(value.toLowerCase()) ||
+          e.email.toLowerCase().contains(value.toLowerCase())) {
+        searchList.add(e);
+      }
+      searchList;
+    }
   }
 }
