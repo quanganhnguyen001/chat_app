@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:chat_app/common/widget/dialogs_widget.dart';
 import 'package:chat_app/features/login/view/screen/login_screen.dart';
@@ -8,6 +10,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:image_picker/image_picker.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key, required this.userModel});
@@ -22,6 +25,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final nameController = TextEditingController();
   final aboutController = TextEditingController();
   final formKey = GlobalKey<FormState>();
+  String? _image;
 
   @override
   void initState() {
@@ -60,24 +64,35 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     SizedBox(width: size.width, height: size.height * .03),
                     Stack(
                       children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(size.height * .1),
-                          child: CachedNetworkImage(
-                            width: size.height * .2,
-                            height: size.height * .2,
-                            fit: BoxFit.fill,
-                            imageUrl: widget.userModel.image,
-                            errorWidget: (context, url, error) =>
-                                const CircleAvatar(
-                                    child: Icon(CupertinoIcons.person)),
-                          ),
-                        ),
+                        _image != null
+                            ? ClipRRect(
+                                borderRadius:
+                                    BorderRadius.circular(Get.height * .1),
+                                child: Image.file(File(_image!),
+                                    width: Get.height * .2,
+                                    height: Get.height * .2,
+                                    fit: BoxFit.cover))
+                            : ClipRRect(
+                                borderRadius:
+                                    BorderRadius.circular(size.height * .1),
+                                child: CachedNetworkImage(
+                                  width: size.height * .2,
+                                  height: size.height * .2,
+                                  fit: BoxFit.fill,
+                                  imageUrl: widget.userModel.image,
+                                  errorWidget: (context, url, error) =>
+                                      const CircleAvatar(
+                                          child: Icon(CupertinoIcons.person)),
+                                ),
+                              ),
                         Positioned(
                           bottom: 0,
                           right: 0,
                           child: MaterialButton(
                             elevation: 1,
-                            onPressed: () {},
+                            onPressed: () {
+                              chooseBottomSheet();
+                            },
                             shape: const CircleBorder(),
                             color: Colors.white,
                             child: const Icon(Icons.edit, color: Colors.blue),
@@ -152,5 +167,73 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           )),
     );
+  }
+
+  void chooseBottomSheet() {
+    showModalBottomSheet(
+        context: context,
+        shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(20), topRight: Radius.circular(20))),
+        builder: (_) {
+          return ListView(
+            shrinkWrap: true,
+            padding: EdgeInsets.only(
+                top: Get.height * .03, bottom: Get.height * .05),
+            children: [
+              const Text('Pick Profile Picture',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w500)),
+              SizedBox(height: Get.height * .02),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          shape: const CircleBorder(),
+                          fixedSize: Size(Get.width * .3, Get.height * .15)),
+                      onPressed: () async {
+                        final ImagePicker picker = ImagePicker();
+
+                        final XFile? image = await picker.pickImage(
+                            source: ImageSource.gallery, imageQuality: 80);
+                        if (image != null) {
+                          setState(() {
+                            _image = image.path;
+                          });
+
+                          FireStoreServices.updateProfilePicture(File(_image!));
+
+                          Navigator.pop(context);
+                        }
+                      },
+                      child: Image.asset('assets/images/add_image.png')),
+                  ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          shape: const CircleBorder(),
+                          fixedSize: Size(Get.width * .3, Get.height * .15)),
+                      onPressed: () async {
+                        final ImagePicker picker = ImagePicker();
+
+                        final XFile? image = await picker.pickImage(
+                            source: ImageSource.camera, imageQuality: 80);
+                        if (image != null) {
+                          setState(() {
+                            _image = image.path;
+                          });
+
+                          FireStoreServices.updateProfilePicture(File(_image!));
+
+                          Navigator.pop(context);
+                        }
+                      },
+                      child: Image.asset('assets/images/camera.png')),
+                ],
+              )
+            ],
+          );
+        });
   }
 }

@@ -1,3 +1,5 @@
+import 'package:chat_app/features/chat/controller/chat_bindings.dart';
+import 'package:chat_app/features/chat/view/screen/chat_screen.dart';
 import 'package:chat_app/features/home/controller/home_binding.dart';
 import 'package:chat_app/features/home/view/screen/home_screen.dart';
 import 'package:chat_app/features/login/controller/login_bindings.dart';
@@ -28,6 +30,12 @@ class AppRoute {
         page: () => ProfileScreen(
               userModel: Get.arguments,
             ),
-        binding: ProfileBindings())
+        binding: ProfileBindings()),
+    GetPage(
+        name: ChatScreens.routeName,
+        page: () => ChatScreens(
+              userModel: Get.arguments,
+            ),
+        binding: ChatBindings()),
   ];
 }

@@ -1,7 +1,9 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:chat_app/features/chat/view/screen/chat_screen.dart';
 import 'package:chat_app/features/user/model/user_model.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 class ChatCardWidget extends StatelessWidget {
   const ChatCardWidget({super.key, required this.userModel});
@@ -16,7 +18,9 @@ class ChatCardWidget extends StatelessWidget {
       elevation: 0.5,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
       child: InkWell(
-        onTap: () {},
+        onTap: () {
+          Get.toNamed(ChatScreens.routeName, arguments: userModel);
+        },
         child: ListTile(
           leading: ClipRRect(
             borderRadius: BorderRadius.circular(size.height * .03),

@@ -1,11 +1,15 @@
+import 'dart:io';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 
 import '../features/user/model/user_model.dart';
 
 class FireStoreServices {
   static FirebaseFirestore firestore = FirebaseFirestore.instance;
   static FirebaseAuth firebaseAuth = FirebaseAuth.instance;
+  static FirebaseStorage storage = FirebaseStorage.instance;
   static late UserModel me;
 
   Future<List<UserModel>> fetchData() async {
@@ -66,5 +70,24 @@ class FireStoreServices {
       'name': name,
       'about': about,
     });
+  }
+
+  static Future<void> updateProfilePicture(File file) async {
+    final ext = file.path.split('.').last;
+
+    final ref = storage
+        .ref()
+        .child('profile_pictures/${firebaseAuth.currentUser!.uid}.$ext');
+
+    await ref
+        .putFile(file, SettableMetadata(contentType: 'image/$ext'))
+        .then((p0) {});
+
+    //updating image in firestore database
+    me.image = await ref.getDownloadURL();
+    await firestore
+        .collection('users')
+        .doc(firebaseAuth.currentUser!.uid)
+        .update({'image': me.image});
   }
 }
