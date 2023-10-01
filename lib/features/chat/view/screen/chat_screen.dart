@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:chat_app/features/chat/controller/chat_controller.dart';
+import 'package:chat_app/features/chat/view/widget/message_card.dart';
 import 'package:chat_app/features/user/model/user_model.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -62,13 +63,14 @@ class ChatScreens extends GetView<ChatController> {
       body: Obx(() => Column(
             children: [
               Expanded(
-                  child: controller.list.isNotEmpty
+                  child: controller.messageList.isNotEmpty
                       ? ListView.builder(
-                          itemCount: controller.list.length,
+                          itemCount: controller.messageList.length,
                           physics: const BouncingScrollPhysics(),
                           padding: EdgeInsets.only(top: Get.height * .01),
                           itemBuilder: (context, index) {
-                            return Text('fsdfsdf');
+                            return MessageCard(
+                                messageModel: controller.messageList[index]);
                           })
                       : const Center(
                           child: Text('Say Hii! 👋',

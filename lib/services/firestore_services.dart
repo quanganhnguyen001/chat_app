@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:chat_app/features/chat/models/chat_model.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -89,5 +90,18 @@ class FireStoreServices {
         .collection('users')
         .doc(firebaseAuth.currentUser!.uid)
         .update({'image': me.image});
+  }
+
+  Future<List<MessageModel>> getAllMessage() async {
+    final QuerySnapshot<Map<String, dynamic>> querySnapshot =
+        await firestore.collection('messages').get();
+    final List<MessageModel> data = [];
+
+    for (final DocumentSnapshot<Map<String, dynamic>> document
+        in querySnapshot.docs) {
+      data.add(MessageModel.fromJson(document.data()!));
+    }
+
+    return data;
   }
 }
