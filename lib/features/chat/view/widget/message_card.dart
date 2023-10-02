@@ -1,3 +1,6 @@
+import 'dart:math';
+
+import 'package:chat_app/common/format_date.dart';
 import 'package:chat_app/features/chat/models/chat_model.dart';
 import 'package:chat_app/services/firestore_services.dart';
 import 'package:flutter/cupertino.dart';
@@ -18,6 +21,9 @@ class MessageCard extends StatelessWidget {
 
   // sender or another user message
   Widget _blueMessage() {
+    if (messageModel.read.isEmpty) {
+      FireStoreServices().updateMessageReadStatus(messageModel);
+    }
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -46,7 +52,7 @@ class MessageCard extends StatelessWidget {
         Padding(
           padding: EdgeInsets.only(right: Get.width * .04),
           child: Text(
-            messageModel.sent,
+            FormatDate().getFormattedTime(messageModel.sent),
             style: const TextStyle(fontSize: 13, color: Colors.black54),
           ),
         ),
@@ -66,14 +72,15 @@ class MessageCard extends StatelessWidget {
             SizedBox(width: Get.width * .04),
 
             //double tick blue icon for message read
-            const Icon(Icons.done_all_rounded, color: Colors.blue, size: 20),
+            if (messageModel.read.isNotEmpty)
+              const Icon(Icons.done_all_rounded, color: Colors.blue, size: 20),
 
             //for adding some space
             const SizedBox(width: 2),
 
             //read time
             Text(
-              '${messageModel.read}12:00 AM',
+              FormatDate().getFormattedTime(messageModel.sent),
               style: const TextStyle(fontSize: 13, color: Colors.black54),
             ),
           ],

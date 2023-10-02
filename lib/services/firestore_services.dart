@@ -92,9 +92,15 @@ class FireStoreServices {
         .update({'image': me.image});
   }
 
-  Future<List<MessageModel>> getAllMessage() async {
-    final QuerySnapshot<Map<String, dynamic>> querySnapshot =
-        await firestore.collection('messages').get();
+  static String getConversationID(String id) =>
+      firebaseAuth.currentUser!.uid.hashCode <= id.hashCode
+          ? '${firebaseAuth.currentUser!.uid}_$id'
+          : '${id}_${firebaseAuth.currentUser!.uid}';
+
+  Future<List<MessageModel>> getAllMessage(UserModel user) async {
+    final QuerySnapshot<Map<String, dynamic>> querySnapshot = await firestore
+        .collection('chats/${getConversationID(user.id)}/messages/')
+        .get();
     final List<MessageModel> data = [];
 
     for (final DocumentSnapshot<Map<String, dynamic>> document
@@ -103,5 +109,38 @@ class FireStoreServices {
     }
 
     return data;
+  }
+
+  static Future<void> sendMessage(UserModel userModel, String msg) async {
+    //message sending time (also used as id)
+    final time = DateTime.now().millisecondsSinceEpoch.toString();
+
+    //message to send
+    final MessageModel message = MessageModel(
+        toId: userModel.id,
+        msg: msg,
+        read: '',
+        type: Type.text,
+        fromId: firebaseAuth.currentUser!.uid,
+        sent: time);
+
+    final ref = firestore
+        .collection('chats/${getConversationID(userModel.id)}/messages/');
+    await ref.doc(time).set(message.toJson());
+  }
+
+  Future<void> updateMessageReadStatus(MessageModel message) async {
+    firestore
+        .collection('chats/${getConversationID(message.fromId)}/messages/')
+        .doc(message.sent)
+        .update({'read': DateTime.now().millisecondsSinceEpoch.toString()});
+  }
+
+  Stream<QuerySnapshot<Map<String, dynamic>>> getLastMessage(UserModel user) {
+    return firestore
+        .collection('chats/${getConversationID(user.id)}/messages/')
+        .orderBy('sent', descending: true)
+        .limit(1)
+        .snapshots();
   }
 }
