@@ -47,7 +47,12 @@ class ChatCardWidget extends StatelessWidget {
                   ),
                 ),
                 title: Text(userModel.name),
-                subtitle: Text(message != null ? message!.msg : userModel.about,
+                subtitle: Text(
+                    message != null
+                        ? message!.type == Type.image
+                            ? 'image'
+                            : message!.msg
+                        : userModel.about,
                     maxLines: 1),
                 trailing: message == null
                     ? null // show when no message sent

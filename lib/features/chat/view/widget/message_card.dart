@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:chat_app/common/format_date.dart';
 import 'package:chat_app/features/chat/models/chat_model.dart';
 import 'package:chat_app/services/firestore_services.dart';
@@ -30,7 +31,9 @@ class MessageCard extends StatelessWidget {
         //message content
         Flexible(
           child: Container(
-            padding: EdgeInsets.all(Get.width * .04),
+            padding: EdgeInsets.all(messageModel.type == Type.image
+                ? Get.width * .03
+                : Get.width * .04),
             margin: EdgeInsets.symmetric(
                 horizontal: Get.width * .04, vertical: Get.height * .01),
             decoration: BoxDecoration(
@@ -41,10 +44,28 @@ class MessageCard extends StatelessWidget {
                     topLeft: Radius.circular(30),
                     topRight: Radius.circular(30),
                     bottomRight: Radius.circular(30))),
-            child: Text(
-              messageModel.msg,
-              style: const TextStyle(fontSize: 15, color: Colors.black87),
-            ),
+            child: messageModel.type == Type.text
+                ? Text(
+                    messageModel.msg,
+                    style: const TextStyle(fontSize: 15, color: Colors.black87),
+                  )
+                : ClipRRect(
+                    borderRadius: BorderRadius.circular(15),
+                    child: CachedNetworkImage(
+                      placeholder: (context, url) => const Padding(
+                        padding: EdgeInsets.all(8.0),
+                        child: Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      ),
+                      imageUrl: messageModel.msg,
+                      errorWidget: (context, url, error) => const Icon(
+                        Icons.image,
+                        size: 70,
+                      ),
+                    ),
+                  ),
           ),
         ),
 
@@ -89,7 +110,9 @@ class MessageCard extends StatelessWidget {
         //message content
         Flexible(
           child: Container(
-            padding: EdgeInsets.all(Get.width * .04),
+            padding: EdgeInsets.all(messageModel.type == Type.image
+                ? Get.width * .03
+                : Get.width * .04),
             margin: EdgeInsets.symmetric(
                 horizontal: Get.width * .04, vertical: Get.height * .01),
             decoration: BoxDecoration(
@@ -100,10 +123,28 @@ class MessageCard extends StatelessWidget {
                     topLeft: Radius.circular(30),
                     topRight: Radius.circular(30),
                     bottomLeft: Radius.circular(30))),
-            child: Text(
-              messageModel.msg,
-              style: const TextStyle(fontSize: 15, color: Colors.black87),
-            ),
+            child: messageModel.type == Type.text
+                ? Text(
+                    messageModel.msg,
+                    style: const TextStyle(fontSize: 15, color: Colors.black87),
+                  )
+                : ClipRRect(
+                    borderRadius: BorderRadius.circular(15),
+                    child: CachedNetworkImage(
+                      placeholder: (context, url) => const Padding(
+                        padding: EdgeInsets.all(8.0),
+                        child: Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      ),
+                      imageUrl: messageModel.msg,
+                      errorWidget: (context, url, error) => const Icon(
+                        Icons.image,
+                        size: 70,
+                      ),
+                    ),
+                  ),
           ),
         ),
       ],

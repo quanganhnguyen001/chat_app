@@ -111,7 +111,8 @@ class FireStoreServices {
     return data;
   }
 
-  static Future<void> sendMessage(UserModel userModel, String msg) async {
+  static Future<void> sendMessage(
+      UserModel userModel, String msg, Type type) async {
     //message sending time (also used as id)
     final time = DateTime.now().millisecondsSinceEpoch.toString();
 
@@ -120,7 +121,7 @@ class FireStoreServices {
         toId: userModel.id,
         msg: msg,
         read: '',
-        type: Type.text,
+        type: type,
         fromId: firebaseAuth.currentUser!.uid,
         sent: time);
 
@@ -142,5 +143,23 @@ class FireStoreServices {
         .orderBy('sent', descending: true)
         .limit(1)
         .snapshots();
+  }
+
+  Future<void> sendChatImage(UserModel userModel, File file) async {
+    //getting image file extension
+    final ext = file.path.split('.').last;
+
+    //storage file ref with path
+    final ref = storage.ref().child(
+        'images/${getConversationID(userModel.id)}/${DateTime.now().millisecondsSinceEpoch}.$ext');
+
+    //uploading image
+    await ref
+        .putFile(file, SettableMetadata(contentType: 'image/$ext'))
+        .then((p0) {});
+
+    //updating image in firestore database
+    final imageUrl = await ref.getDownloadURL();
+    await sendMessage(userModel, imageUrl, Type.image);
   }
 }
