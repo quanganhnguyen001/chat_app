@@ -1,9 +1,11 @@
 import 'dart:io';
 
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:chat_app/common/format_date.dart';
 import 'package:chat_app/features/chat/controller/chat_controller.dart';
 import 'package:chat_app/features/chat/models/chat_model.dart';
 import 'package:chat_app/features/chat/view/widget/message_card.dart';
+import 'package:chat_app/features/chat/view/widget/view_user_profile.dart';
 import 'package:chat_app/features/user/model/user_model.dart';
 import 'package:chat_app/services/firestore_services.dart';
 import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
@@ -24,12 +26,7 @@ class ChatScreens extends StatefulWidget {
 class _ChatScreensState extends State<ChatScreens> {
   final textController = TextEditingController();
   final controller = Get.put(ChatController());
-
-  @override
-  void initState() {
-    controller.getAllMessages(widget.userModel);
-    super.initState();
-  }
+  List<MessageModel> _list = [];
 
   @override
   Widget build(BuildContext context) {
@@ -42,52 +39,91 @@ class _ChatScreensState extends State<ChatScreens> {
           leading: IconButton(
               onPressed: () => Get.back(),
               icon: const Icon(Icons.arrow_back, color: Colors.black54)),
-          title: Row(
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(Get.height * .03),
-                child: CachedNetworkImage(
-                  width: Get.height * .05,
-                  height: Get.height * .05,
-                  imageUrl: widget.userModel.image,
-                  errorWidget: (context, url, error) =>
-                      const CircleAvatar(child: Icon(CupertinoIcons.person)),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(widget.userModel.name,
-                      style: const TextStyle(
-                          fontSize: 16,
-                          color: Colors.black87,
-                          fontWeight: FontWeight.w500)),
-                  const SizedBox(height: 2),
-                  const Text('Last seen not available',
-                      style: TextStyle(fontSize: 13, color: Colors.black54)),
-                ],
-              )
-            ],
+          title: InkWell(
+            onTap: () {
+              Get.to(() => ViewUserProfile(userModel: widget.userModel));
+            },
+            child: StreamBuilder(
+                stream: FireStoreServices().getUserInfo(widget.userModel),
+                builder: (context, snapshot) {
+                  final data = snapshot.data?.docs;
+                  final list =
+                      data?.map((e) => UserModel.fromJson(e.data())).toList() ??
+                          [];
+                  return Row(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(Get.height * .03),
+                        child: CachedNetworkImage(
+                          width: Get.height * .05,
+                          height: Get.height * .05,
+                          imageUrl: list.isNotEmpty
+                              ? list[0].image
+                              : widget.userModel.image,
+                          errorWidget: (context, url, error) =>
+                              const CircleAvatar(
+                                  child: Icon(CupertinoIcons.person)),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                              list.isNotEmpty
+                                  ? list[0].name
+                                  : widget.userModel.name,
+                              style: const TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.black87,
+                                  fontWeight: FontWeight.w500)),
+                          const SizedBox(height: 2),
+                          Text(
+                              list.isNotEmpty
+                                  ? list[0].isOnline
+                                      ? 'Online'
+                                      : FormatDate.getLastActiveTime(
+                                          context: context,
+                                          lastActive: list[0].lastActive)
+                                  : FormatDate.getLastActiveTime(
+                                      context: context,
+                                      lastActive: widget.userModel.lastActive),
+                              style: TextStyle(
+                                  fontSize: 13, color: Colors.black54)),
+                        ],
+                      )
+                    ],
+                  );
+                }),
           ),
         ),
         body: Obx(() => Column(
               children: [
                 Expanded(
-                    child: controller.messageList.isNotEmpty
+                    child: StreamBuilder(
+                  stream: FireStoreServices.getAllMessages(widget.userModel),
+                  builder: (context, snapshot) {
+                    final data = snapshot.data?.docs;
+                    _list = data
+                            ?.map((e) => MessageModel.fromJson(e.data()))
+                            .toList() ??
+                        [];
+                    return _list.isNotEmpty
                         ? ListView.builder(
-                            itemCount: controller.messageList.length,
+                            reverse: true,
+                            itemCount: _list.length,
                             physics: const BouncingScrollPhysics(),
                             padding: EdgeInsets.only(top: Get.height * .01),
                             itemBuilder: (context, index) {
-                              return MessageCard(
-                                  messageModel: controller.messageList[index]);
+                              return MessageCard(messageModel: _list[index]);
                             })
                         : const Center(
                             child: Text('Say Hii! 👋',
                                 style: TextStyle(fontSize: 20)),
-                          )),
+                          );
+                  },
+                )),
                 _chatInput(),
                 if (controller.isLoading.value)
                   Align(
@@ -219,7 +255,6 @@ class _ChatScreensState extends State<ChatScreens> {
                 FireStoreServices.sendMessage(
                     widget.userModel, textController.text, Type.text);
                 textController.clear();
-                controller.getAllMessages(widget.userModel);
               }
             },
             minWidth: 0,

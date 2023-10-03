@@ -97,18 +97,12 @@ class FireStoreServices {
           ? '${firebaseAuth.currentUser!.uid}_$id'
           : '${id}_${firebaseAuth.currentUser!.uid}';
 
-  Future<List<MessageModel>> getAllMessage(UserModel user) async {
-    final QuerySnapshot<Map<String, dynamic>> querySnapshot = await firestore
+  static Stream<QuerySnapshot<Map<String, dynamic>>> getAllMessages(
+      UserModel user) {
+    return firestore
         .collection('chats/${getConversationID(user.id)}/messages/')
-        .get();
-    final List<MessageModel> data = [];
-
-    for (final DocumentSnapshot<Map<String, dynamic>> document
-        in querySnapshot.docs) {
-      data.add(MessageModel.fromJson(document.data()!));
-    }
-
-    return data;
+        .orderBy('sent', descending: true)
+        .snapshots();
   }
 
   static Future<void> sendMessage(
@@ -161,5 +155,19 @@ class FireStoreServices {
     //updating image in firestore database
     final imageUrl = await ref.getDownloadURL();
     await sendMessage(userModel, imageUrl, Type.image);
+  }
+
+  Stream<QuerySnapshot<Map<String, dynamic>>> getUserInfo(UserModel userModel) {
+    return firestore
+        .collection('users')
+        .where('id', isEqualTo: userModel.id)
+        .snapshots();
+  }
+
+  Future<void> updateActiveStatus(bool isOnline) async {
+    firestore.collection('users').doc(firebaseAuth.currentUser!.uid).update({
+      'is_online': isOnline,
+      'last_active': DateTime.now().millisecondsSinceEpoch.toString(),
+    });
   }
 }
