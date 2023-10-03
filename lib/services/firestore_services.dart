@@ -1,9 +1,13 @@
+import 'dart:convert';
+import 'dart:developer';
 import 'dart:io';
 
 import 'package:chat_app/features/chat/models/chat_model.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:http/http.dart';
 
 import '../features/user/model/user_model.dart';
 
@@ -11,6 +15,7 @@ class FireStoreServices {
   static FirebaseFirestore firestore = FirebaseFirestore.instance;
   static FirebaseAuth firebaseAuth = FirebaseAuth.instance;
   static FirebaseStorage storage = FirebaseStorage.instance;
+  FirebaseMessaging firebaseMessaging = FirebaseMessaging.instance;
   static late UserModel me;
 
   Future<List<UserModel>> fetchData() async {
@@ -28,6 +33,56 @@ class FireStoreServices {
     return data;
   }
 
+  Future<void> getFirebaseMessagingToken() async {
+    await firebaseMessaging.requestPermission();
+
+    await firebaseMessaging.getToken().then((t) {
+      if (t != null) {
+        me.pushToken = t;
+        log('Push Token: $t');
+      }
+    });
+
+    // for handling foreground messages
+    // FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+    //   log('Got a message whilst in the foreground!');
+    //   log('Message data: ${message.data}');
+
+    //   if (message.notification != null) {
+    //     log('Message also contained a notification: ${message.notification}');
+    //   }
+    // });
+  }
+
+  static Future<void> sendPushNotification(
+      UserModel userModel, String msg) async {
+    try {
+      final body = {
+        "to": userModel.pushToken,
+        "notification": {
+          "title": me.name, //our name should be send
+          "body": msg,
+          "android_channel_id": "chats"
+        },
+        // "data": {
+        //   "some_data": "User ID: ${me.id}",
+        // },
+      };
+
+      var res = await post(Uri.parse('https://fcm.googleapis.com/fcm/send'),
+          headers: {
+            HttpHeaders.contentTypeHeader: 'application/json',
+            HttpHeaders.authorizationHeader:
+                'key=AAAAtgDLXQk:APA91bFnomCKok15ajGKrS_en6EnKWPHcgUsNcmFuh6ssWk-jif_rO_ZBRoSS7bHR1y-DA7U5DwzgbQVRl4nLkrorggLz1Cq10eh6gRCREbntkuWyCZXM5O-r9NQpFuDYMeC6vF0QpvP'
+          },
+          body: jsonEncode(body));
+      log('Response status: ${res.statusCode}');
+      log('Response body: ${res.body}');
+    } catch (e) {
+      log('\nsendPushNotificationE: $e');
+    }
+  }
+
   Future<bool> userExists() async {
     return (await firestore
             .collection('users')
@@ -43,6 +98,7 @@ class FireStoreServices {
         .get()
         .then((user) {
       me = UserModel.fromJson(user.data()!);
+      getFirebaseMessagingToken();
     }));
   }
 
@@ -121,7 +177,8 @@ class FireStoreServices {
 
     final ref = firestore
         .collection('chats/${getConversationID(userModel.id)}/messages/');
-    await ref.doc(time).set(message.toJson());
+    await ref.doc(time).set(message.toJson()).then((value) =>
+        sendPushNotification(userModel, type == Type.text ? msg : 'image'));
   }
 
   Future<void> updateMessageReadStatus(MessageModel message) async {
@@ -168,6 +225,7 @@ class FireStoreServices {
     firestore.collection('users').doc(firebaseAuth.currentUser!.uid).update({
       'is_online': isOnline,
       'last_active': DateTime.now().millisecondsSinceEpoch.toString(),
+      'push_token': me.pushToken,
     });
   }
 }
