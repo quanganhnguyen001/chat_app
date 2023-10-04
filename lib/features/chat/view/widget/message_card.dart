@@ -6,24 +6,37 @@ import 'package:chat_app/features/chat/models/chat_model.dart';
 import 'package:chat_app/services/firestore_services.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
-class MessageCard extends StatelessWidget {
+import '../../../../common/widget/dialogs_widget.dart';
+import 'option_item.dart';
+
+class MessageCard extends StatefulWidget {
   const MessageCard({super.key, required this.messageModel});
   final MessageModel messageModel;
 
   @override
+  State<MessageCard> createState() => _MessageCardState();
+}
+
+class _MessageCardState extends State<MessageCard> {
+  @override
   Widget build(BuildContext context) {
-    return FireStoreServices.firebaseAuth.currentUser!.uid ==
-            messageModel.fromId
-        ? _greenMessage()
-        : _blueMessage();
+    bool isMe = FireStoreServices.firebaseAuth.currentUser!.uid ==
+        widget.messageModel.fromId;
+    return InkWell(
+      onLongPress: () {
+        _showBottomSheet(isMe);
+      },
+      child: isMe ? _greenMessage() : _blueMessage(),
+    );
   }
 
   // sender or another user message
   Widget _blueMessage() {
-    if (messageModel.read.isEmpty) {
-      FireStoreServices().updateMessageReadStatus(messageModel);
+    if (widget.messageModel.read.isEmpty) {
+      FireStoreServices().updateMessageReadStatus(widget.messageModel);
     }
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -31,7 +44,7 @@ class MessageCard extends StatelessWidget {
         //message content
         Flexible(
           child: Container(
-            padding: EdgeInsets.all(messageModel.type == Type.image
+            padding: EdgeInsets.all(widget.messageModel.type == Type.image
                 ? Get.width * .03
                 : Get.width * .04),
             margin: EdgeInsets.symmetric(
@@ -44,9 +57,9 @@ class MessageCard extends StatelessWidget {
                     topLeft: Radius.circular(30),
                     topRight: Radius.circular(30),
                     bottomRight: Radius.circular(30))),
-            child: messageModel.type == Type.text
+            child: widget.messageModel.type == Type.text
                 ? Text(
-                    messageModel.msg,
+                    widget.messageModel.msg,
                     style: const TextStyle(fontSize: 15, color: Colors.black87),
                   )
                 : ClipRRect(
@@ -59,7 +72,7 @@ class MessageCard extends StatelessWidget {
                           child: CircularProgressIndicator(strokeWidth: 2),
                         ),
                       ),
-                      imageUrl: messageModel.msg,
+                      imageUrl: widget.messageModel.msg,
                       errorWidget: (context, url, error) => const Icon(
                         Icons.image,
                         size: 70,
@@ -73,7 +86,7 @@ class MessageCard extends StatelessWidget {
         Padding(
           padding: EdgeInsets.only(right: Get.width * .04),
           child: Text(
-            FormatDate().getFormattedTime(messageModel.sent),
+            FormatDate().getFormattedTime(widget.messageModel.sent),
             style: const TextStyle(fontSize: 13, color: Colors.black54),
           ),
         ),
@@ -93,7 +106,7 @@ class MessageCard extends StatelessWidget {
             SizedBox(width: Get.width * .04),
 
             //double tick blue icon for message read
-            if (messageModel.read.isNotEmpty)
+            if (widget.messageModel.read.isNotEmpty)
               const Icon(Icons.done_all_rounded, color: Colors.blue, size: 20),
 
             //for adding some space
@@ -101,7 +114,7 @@ class MessageCard extends StatelessWidget {
 
             //read time
             Text(
-              FormatDate().getFormattedTime(messageModel.sent),
+              FormatDate().getFormattedTime(widget.messageModel.sent),
               style: const TextStyle(fontSize: 13, color: Colors.black54),
             ),
           ],
@@ -110,7 +123,7 @@ class MessageCard extends StatelessWidget {
         //message content
         Flexible(
           child: Container(
-            padding: EdgeInsets.all(messageModel.type == Type.image
+            padding: EdgeInsets.all(widget.messageModel.type == Type.image
                 ? Get.width * .03
                 : Get.width * .04),
             margin: EdgeInsets.symmetric(
@@ -123,9 +136,9 @@ class MessageCard extends StatelessWidget {
                     topLeft: Radius.circular(30),
                     topRight: Radius.circular(30),
                     bottomLeft: Radius.circular(30))),
-            child: messageModel.type == Type.text
+            child: widget.messageModel.type == Type.text
                 ? Text(
-                    messageModel.msg,
+                    widget.messageModel.msg,
                     style: const TextStyle(fontSize: 15, color: Colors.black87),
                   )
                 : ClipRRect(
@@ -138,7 +151,7 @@ class MessageCard extends StatelessWidget {
                           child: CircularProgressIndicator(strokeWidth: 2),
                         ),
                       ),
-                      imageUrl: messageModel.msg,
+                      imageUrl: widget.messageModel.msg,
                       errorWidget: (context, url, error) => const Icon(
                         Icons.image,
                         size: 70,
@@ -149,5 +162,173 @@ class MessageCard extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  void _showBottomSheet(bool isMe) {
+    showModalBottomSheet(
+        context: context,
+        shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(20), topRight: Radius.circular(20))),
+        builder: (_) {
+          return ListView(
+            shrinkWrap: true,
+            children: [
+              //black divider
+              Container(
+                height: 4,
+                margin: EdgeInsets.symmetric(
+                    vertical: Get.height * .015, horizontal: Get.width * .4),
+                decoration: BoxDecoration(
+                    color: Colors.grey, borderRadius: BorderRadius.circular(8)),
+              ),
+
+              widget.messageModel.type == Type.text
+                  ?
+                  //copy option
+                  OptionItem(
+                      icon: const Icon(Icons.copy_all_rounded,
+                          color: Colors.blue, size: 26),
+                      name: 'Copy Text',
+                      onTap: () async {
+                        await Clipboard.setData(
+                                ClipboardData(text: widget.messageModel.msg))
+                            .then((value) {
+                          //for hiding bottom sheet
+                          Get.back();
+
+                          Dialogs.showSnackbar('Text Copied!');
+                        });
+                      })
+                  :
+                  //save option
+                  OptionItem(
+                      icon: const Icon(Icons.download_rounded,
+                          color: Colors.blue, size: 26),
+                      name: 'Save Image',
+                      onTap: () async {
+                        // try {
+                        //   log('Image Url: ${widget.messageModel.msg}');
+                        //   await GallerySaver.saveImage(widget.message.msg,
+                        //           albumName: 'We Chat')
+                        //       .then((success) {
+                        //     //for hiding bottom sheet
+                        //     Navigator.pop(context);
+                        //     if (success != null && success) {
+                        //       Dialogs.showSnackbar(
+                        //           context, 'Image Successfully Saved!');
+                        //     }
+                        //   });
+                        // } catch (e) {
+                        //   log('ErrorWhileSavingImg: $e');
+                        // }
+                      }),
+
+              //separator or divider
+              if (isMe)
+                Divider(
+                  color: Colors.black54,
+                  endIndent: Get.width * .04,
+                  indent: Get.width * .04,
+                ),
+
+              //edit option
+              if (widget.messageModel.type == Type.text && isMe)
+                OptionItem(
+                    icon: const Icon(Icons.edit, color: Colors.blue, size: 26),
+                    name: 'Edit Message',
+                    onTap: () {
+                      //for hiding bottom sheet
+                      // Navigator.pop(context);
+
+                      _showMessageUpdateDialog();
+                    }),
+
+              //delete option
+              if (isMe)
+                OptionItem(
+                    icon: const Icon(Icons.delete_forever,
+                        color: Colors.red, size: 26),
+                    name: 'Delete Message',
+                    onTap: () async {
+                      await FireStoreServices()
+                          .deleteMessage(widget.messageModel)
+                          .then((value) {
+                        //for hiding bottom sheet
+                        Get.back();
+                      });
+                    }),
+
+              //separator or divider
+              Divider(
+                color: Colors.black54,
+                endIndent: Get.width * .04,
+                indent: Get.width * .04,
+              ),
+            ],
+          );
+        });
+  }
+
+  void _showMessageUpdateDialog() {
+    String updatedMsg = widget.messageModel.msg;
+
+    showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+              contentPadding: const EdgeInsets.only(
+                  left: 24, right: 24, top: 20, bottom: 10),
+
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20)),
+
+              //title
+              title: Row(
+                children: const [
+                  Icon(
+                    Icons.message,
+                    color: Colors.blue,
+                    size: 28,
+                  ),
+                  Text(' Update Message')
+                ],
+              ),
+
+              //content
+              content: TextFormField(
+                initialValue: updatedMsg,
+                maxLines: null,
+                onChanged: (value) => updatedMsg = value,
+                decoration: InputDecoration(
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(15))),
+              ),
+
+              //actions
+              actions: [
+                //cancel button
+                MaterialButton(
+                    onPressed: () {
+                      //hide alert dialog
+                      Navigator.pop(context);
+                    },
+                    child: const Text(
+                      'Cancel',
+                      style: TextStyle(color: Colors.blue, fontSize: 16),
+                    )),
+
+                //update button
+                MaterialButton(
+                    onPressed: () {
+                      //hide alert dialog
+                      // Navigator.pop(context);
+                      // APIs.updateMessage(widget.messageModel, updatedMsg);
+                    },
+                    child: const Text(
+                      'Update',
+                      style: TextStyle(color: Colors.blue, fontSize: 16),
+                    ))
+              ],
+            ));
   }
 }

@@ -37,7 +37,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
@@ -57,34 +56,46 @@ class _ProfileScreenState extends State<ProfileScreen> {
           body: Form(
             key: formKey,
             child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: size.width * .05),
+              padding: EdgeInsets.symmetric(horizontal: Get.width * .05),
               child: SingleChildScrollView(
                 child: Column(
                   children: [
-                    SizedBox(width: size.width, height: size.height * .03),
+                    // for adding some space
+                    SizedBox(width: Get.width, height: Get.height * .03),
+
+                    //user profile picture
                     Stack(
                       children: [
+                        //profile picture
                         _image != null
-                            ? ClipRRect(
+                            ?
+
+                            //local image
+                            ClipRRect(
                                 borderRadius:
                                     BorderRadius.circular(Get.height * .1),
                                 child: Image.file(File(_image!),
                                     width: Get.height * .2,
                                     height: Get.height * .2,
                                     fit: BoxFit.cover))
-                            : ClipRRect(
+                            :
+
+                            //image from server
+                            ClipRRect(
                                 borderRadius:
-                                    BorderRadius.circular(size.height * .1),
+                                    BorderRadius.circular(Get.height * .1),
                                 child: CachedNetworkImage(
-                                  width: size.height * .2,
-                                  height: size.height * .2,
-                                  fit: BoxFit.fill,
+                                  width: Get.height * .2,
+                                  height: Get.height * .2,
+                                  fit: BoxFit.cover,
                                   imageUrl: widget.userModel.image,
                                   errorWidget: (context, url, error) =>
                                       const CircleAvatar(
                                           child: Icon(CupertinoIcons.person)),
                                 ),
                               ),
+
+                        //edit image button
                         Positioned(
                           bottom: 0,
                           right: 0,
@@ -100,20 +111,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         )
                       ],
                     ),
-                    SizedBox(height: size.height * .03),
+
+                    // for adding some space
+                    SizedBox(height: Get.height * .03),
+
+                    // user email label
                     Text(widget.userModel.email,
                         style: const TextStyle(
                             color: Colors.black54, fontSize: 16)),
-                    SizedBox(height: size.height * .05),
-                    TextFormField(
-                      controller: nameController,
-                      validator: (value) {
-                        if (value != null && value.isNotEmpty) {
-                          return null;
-                        }
 
-                        return 'Pls enter name';
-                      },
+                    // for adding some space
+                    SizedBox(height: Get.height * .05),
+
+                    // name input field
+                    TextFormField(
+                      initialValue: widget.userModel.name,
+                      onSaved: (val) => FireStoreServices.me.name = val ?? '',
+                      validator: (val) => val != null && val.isNotEmpty
+                          ? null
+                          : 'Required Field',
                       decoration: InputDecoration(
                           prefixIcon:
                               const Icon(Icons.person, color: Colors.blue),
@@ -122,15 +138,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           hintText: 'eg. Happy Singh',
                           label: const Text('Name')),
                     ),
-                    SizedBox(height: size.height * .02),
+
+                    // for adding some space
+                    SizedBox(height: Get.height * .02),
+
+                    // about input field
                     TextFormField(
-                      controller: aboutController,
-                      validator: (value) {
-                        if (value != null && value.isNotEmpty) {
-                          return null;
-                        }
-                        return 'Pls enter about';
-                      },
+                      initialValue: widget.userModel.about,
+                      onSaved: (val) => FireStoreServices.me.about = val ?? '',
+                      validator: (val) => val != null && val.isNotEmpty
+                          ? null
+                          : 'Required Field',
                       decoration: InputDecoration(
                           prefixIcon: const Icon(Icons.info_outline,
                               color: Colors.blue),
@@ -139,23 +157,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           hintText: 'eg. Feeling Happy',
                           label: const Text('About')),
                     ),
-                    SizedBox(height: size.height * .05),
+
+                    // for adding some space
+                    SizedBox(height: Get.height * .05),
+
+                    // update profile button
                     ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
                           shape: const StadiumBorder(),
-                          minimumSize:
-                              Size(size.width * .5, size.height * .06)),
+                          minimumSize: Size(Get.width * .5, Get.height * .06)),
                       onPressed: () {
                         if (formKey.currentState!.validate()) {
-                          FireStoreServices()
-                              .updateInfo(
-                                  name: nameController.text,
-                                  about: aboutController.text)
-                              .then((value) {
-                            Dialogs.showSnackbar('Updated Successfully !');
+                          formKey.currentState!.save();
+                          FireStoreServices().updateUserInfo().then((value) {
+                            Dialogs.showSnackbar('Updated Successfully');
                           });
                         }
-                        ;
                       },
                       icon: const Icon(Icons.edit, size: 28),
                       label:

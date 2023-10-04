@@ -119,13 +119,13 @@ class FireStoreServices {
             .toJson());
   }
 
-  Future<void> updateInfo({required String name, required String about}) async {
+  Future<void> updateUserInfo() async {
     await firestore
         .collection('users')
         .doc(firebaseAuth.currentUser!.uid)
         .update({
-      'name': name,
-      'about': about,
+      'name': me.name,
+      'about': me.about,
     });
   }
 
@@ -227,5 +227,16 @@ class FireStoreServices {
       'last_active': DateTime.now().millisecondsSinceEpoch.toString(),
       'push_token': me.pushToken,
     });
+  }
+
+  Future<void> deleteMessage(MessageModel message) async {
+    await firestore
+        .collection('chats/${getConversationID(message.toId)}/messages/')
+        .doc(message.sent)
+        .delete();
+
+    if (message.type == Type.image) {
+      await storage.refFromURL(message.msg).delete();
+    }
   }
 }
