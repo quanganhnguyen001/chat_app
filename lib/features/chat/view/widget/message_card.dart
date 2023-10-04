@@ -7,6 +7,7 @@ import 'package:chat_app/services/firestore_services.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:gallery_saver/gallery_saver.dart';
 import 'package:get/get.dart';
 
 import '../../../../common/widget/dialogs_widget.dart';
@@ -207,21 +208,19 @@ class _MessageCardState extends State<MessageCard> {
                           color: Colors.blue, size: 26),
                       name: 'Save Image',
                       onTap: () async {
-                        // try {
-                        //   log('Image Url: ${widget.messageModel.msg}');
-                        //   await GallerySaver.saveImage(widget.message.msg,
-                        //           albumName: 'We Chat')
-                        //       .then((success) {
-                        //     //for hiding bottom sheet
-                        //     Navigator.pop(context);
-                        //     if (success != null && success) {
-                        //       Dialogs.showSnackbar(
-                        //           context, 'Image Successfully Saved!');
-                        //     }
-                        //   });
-                        // } catch (e) {
-                        //   log('ErrorWhileSavingImg: $e');
-                        // }
+                        try {
+                          await GallerySaver.saveImage(widget.messageModel.msg,
+                                  albumName: 'QA Chat')
+                              .then((success) {
+                            //for hiding bottom sheet
+                            Get.back();
+                            if (success != null && success) {
+                              Dialogs.showSnackbar('Image Successfully Saved!');
+                            }
+                          });
+                        } catch (e) {
+                          print(e);
+                        }
                       }),
 
               //separator or divider
@@ -239,7 +238,7 @@ class _MessageCardState extends State<MessageCard> {
                     name: 'Edit Message',
                     onTap: () {
                       //for hiding bottom sheet
-                      // Navigator.pop(context);
+                      Get.back();
 
                       _showMessageUpdateDialog();
                     }),
@@ -321,8 +320,9 @@ class _MessageCardState extends State<MessageCard> {
                 MaterialButton(
                     onPressed: () {
                       //hide alert dialog
-                      // Navigator.pop(context);
-                      // APIs.updateMessage(widget.messageModel, updatedMsg);
+                      Get.back();
+                      FireStoreServices()
+                          .updateMessage(widget.messageModel, updatedMsg);
                     },
                     child: const Text(
                       'Update',

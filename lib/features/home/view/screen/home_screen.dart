@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
+import '../../../../common/widget/dialogs_widget.dart';
 import '../../../user/model/user_model.dart';
 
 class HomeScreen extends GetView<HomeController> {
@@ -84,14 +85,75 @@ class HomeScreen extends GetView<HomeController> {
           floatingActionButton: Padding(
             padding: const EdgeInsets.only(bottom: 10),
             child: FloatingActionButton(
-                onPressed: () async {
-                  await FirebaseAuth.instance.signOut();
-                  await GoogleSignIn().signOut();
-                },
+                onPressed: () async {},
                 child: const Icon(Icons.add_comment_rounded)),
           ),
         ),
       ),
     );
+  }
+
+  void _addChatUserDialog() {
+    String email = '';
+
+    Get.dialog(AlertDialog(
+      contentPadding:
+          const EdgeInsets.only(left: 24, right: 24, top: 20, bottom: 10),
+
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+
+      //title
+      title: Row(
+        children: const [
+          Icon(
+            Icons.person_add,
+            color: Colors.blue,
+            size: 28,
+          ),
+          Text('  Add User')
+        ],
+      ),
+
+      //content
+      content: TextFormField(
+        maxLines: null,
+        onChanged: (value) => email = value,
+        decoration: InputDecoration(
+            hintText: 'Email Id',
+            prefixIcon: const Icon(Icons.email, color: Colors.blue),
+            border:
+                OutlineInputBorder(borderRadius: BorderRadius.circular(15))),
+      ),
+
+      //actions
+      actions: [
+        //cancel button
+        MaterialButton(
+            onPressed: () {
+              //hide alert dialog
+              Get.back();
+            },
+            child: const Text('Cancel',
+                style: TextStyle(color: Colors.blue, fontSize: 16))),
+
+        //add button
+        MaterialButton(
+            onPressed: () async {
+              //hide alert dialog
+              Get.back();
+              if (email.isNotEmpty) {
+                await FireStoreServices().addChatUser(email).then((value) {
+                  if (!value) {
+                    Dialogs.showSnackbar('User does not Exists!');
+                  }
+                });
+              }
+            },
+            child: const Text(
+              'Add',
+              style: TextStyle(color: Colors.blue, fontSize: 16),
+            ))
+      ],
+    ));
   }
 }
